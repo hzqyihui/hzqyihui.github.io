@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Git 是一套内容寻址文件系统。很不错。不过这是什么意思呢？ 这种说法的意思是，Git 从核心上来看不过是简单地存储键值对（key-value）。它允许插入任意类型的内容，并会返回一个键值，通过该键值可以在任何时候再取出该内容。
+我们都知道..." />
+    <meta name="keywords" content="Git" />
+    <link rel="stylesheet" href="https://hzqyihui.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://hzqyihui.github.io/styles/main.css">
+    <!-- 代码渲染风格css -->
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/rainbow.min.css">
+    
+    <!-- 代码高亮插件 -->
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <!-- 代码复制插件 -->
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <!-- live2d插件 -->
+    <link rel="stylesheet" href="https://hzqyihui.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <!-- 数学公式 -->
+    
+    <title>GIT 原理   ：</title>
+
+    <!-- 大纲索引css调整 -->
+    
+    <style>
+        .markdownIt-TOC {
+            margin-left: 28%;
+            padding-left: 2px;
+            width: 80%;
+        }
+
+        .markdownIt-TOC li {
+            padding-left: 8%;
+        }
+    </style>
+    
+</head>
+
+<body>
+    <div id="landlord">
+        <div class="message" style="opacity:0"></div>
+        <canvas id="live2d" width="240" height="250" class="live2d"></canvas>
+    </div>
+    <div id="domainname" style="display:none">https://hzqyihui.github.io</div>
+    <div id="content">
+        <div>
+            <!----------- 移动端导航栏👇 ----------------->
+            <div id="bar">
+                <style>
+  .navmobile {
+    z-index: 15;
+    max-height: 40vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
+  @media screen and (max-width: 1200px) {
+    .navbar {
+      max-width: 100vw;
+    }
+  }
+
+  @media screen and (max-width:1200px) and (min-width: 768px) {
+    @media (min-width: 768px) {
+      .navbar-nav {
+        float: right;
+        margin: 0;
+      }
+    }
+  }
+
+  @media screen and (max-width:768px) {
+    .mbapspan {
+      padding: 0;
+    }
+  }
+</style>
+<div class="pjaxloading"  onclick="pjaxloadingClose()">
+  <div class="loadingbackground"></div>
+  <div id="loading">
+    <div class="loading">
+    </div>
+  </div>
+</div>
+<nav class="navbar navbar-inverse navbar-fixed-top navmobile">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#barmenu"
+        aria-expanded="false" id="barbutton">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a data-pjax class="navbar-brand" style="color:white" href="https://hzqyihui.github.io">MaxHua&#39;s Note&nbsp;&nbsp;|</a>
+      <span class="navbar-brand mbapspan"><i id="mbaplayer" class="fa fa-play-circle-o" aria-hidden="true"
+          style="font-size: 28px;top: 12px;position: absolute;" onclick="aplayerPlay();"></i></span>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="barmenu">
+      <ul class="nav navbar-nav">
+        
+        
+        <li>
+          <a data-pjax href="/" style="color:white">
+            首页
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/archives" style="color:white">
+            归档
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/tags" style="color:white">
+            标签
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/post/about" style="color:white">
+            关于
+          </a>
+        </li>
+        
+        
+        
+        
+          
+        <li><a data-pjax href="https://hzqyihui.github.io/friends" style="color:white">友链</a></li>
+
+        
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+
+  <!-- 引入jQuery核心js文件 -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+  <script>
+    let btstate = false;
+    var bt = $("#barbutton");
+    var bm = $("#barmenu");
+    bt.click(function () {
+      dropdown();
+    })
+    function dropdown() {
+      console.log(btstate);
+      //下拉
+      if (btstate == false) {
+        bt.removeClass("collapsed");
+        bt.attr("aria-expanded", "true");
+        bm.attr("aria-expanded", "true")
+        bm.fadeIn(700);
+        btstate = true;
+      }
+      else {
+        bt.addClass("collapsed");
+        bt.attr("aria-expanded", "false");
+        bm.removeClass("in");
+        bm.hide();
+        bm.attr("aria-expanded", "false");
+        btstate = false;
+      }
+    }
+  </script> 
+            </div>
+            <!----------- 移动端导航栏👆 ----------------->
+
+            <!--------------- pc端菜单栏👇 ---------------->
+            <div class="side"><head>
+    <link rel="stylesheet" href="https://hzqyihui.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://hzqyihui.github.io/styles/main.css">
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/rainbow.min.css">
+    
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <link rel="stylesheet" href="https://hzqyihui.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- fancybox -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+    <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+
+
+    <!--------- 数学公式👇---- -->
+    
+    <!--------- 数学公式👆----------------- -->
+    <!--------- daovocie功能👇 ------------------->
+    
+    <!--------- daovocie功能👆 ------------------->
+    <!-- -----------------twikoo评论系统引入👇 --------->
+    <script src="https://cdn.jsdelivr.net/npm/twikoo@1.3.1/dist/twikoo.all.min.js"></script>
+    <!-- -----------------twikoo评论系统引入👆 --------->
+    <!---------------- leancloud api 功能依赖引入👇 -------->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script>
+    <!---------------- leancloud api 功能依赖引入👆 -------->
+    <!------------------ valine评论系统引入👇 ------------------>
+    <script src="https://hzqyihui.github.io/media/js/valine.min.js"></script>
+    <!------------------ valine评论系统引入👆 ------------------>
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
+    <!---------------- 今日诗词api功能依赖👆 ----------------------->
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/ispeak-bber/ispeak-bber.min.js" charset="utf-8"></script>
+    <!---------------- 哔哔功能依赖👆 ----------------------->
+
+
+</head>
+
+<style>
+    body {
+        overflow-x: hidden;
+        height: 100vh;
+        overflow-y: scroll;
+        cursor: url("https://hzqyihui.github.io/media/images/mouse_cursor.png"), auto
+    }
+</style>
+
+<body>
+    <!--=------ 页面加载动态画面👇 --------------->
+    <div class="pjaxloading" onclick="pjaxloadingClose()">
+        <div class="loadingbackground"></div>
+        <div id="loading-aname">
+            <div class="loading-aname">
+            </div>
+        </div>
+    </div>
+    <!--=------ 页面加载动态画面👆 --------------->
+
+    <!--------------- 左侧菜单栏👇 ------------------------>
+    
+    <div id=side>
+        <div class="r_m_div">
+            <a onclick="showAaplayer()"><i style="font-size: 20px;"><img
+                        src='https://hzqyihui.github.io/media/images/music.png' alt="音乐播放器" class="musicbtn"></i></a>
+        </div>
+        <div class="avatar-border">
+            <img src="https://hzqyihui.github.io/images/avatar.png?v=1664120146255" class="avatar">
+        </div>
+        <div class="sitename">MaxHua&#39;s Note</div>
+        <span class="description" data-text='["当能力和欲望不匹配时，人会极度痛苦。所以努力吧。"]'>&nbsp;</span>
+        <div class="siteinfocontainer">
+            <span class="siteinfo">文章</span>
+            <span class="siteinfo">标签</span>
+        </div>
+        <div class="siteinfocontainer">
+            <span class="siteinfo" id="siteinfo-postsnum"></span>
+            <span class="siteinfo">16</span>
+        </div>
+        
+        <div class="search">
+            <!-- <input type="text" class="search-input" placeholder="标题搜索(●'◡'●)" /> -->
+            <input type="text" class="search-input" placeholder="标题搜索 ⚆_⚆ つ♡">
+            <div class="search-results"></div>
+        </div>
+        
+    <div class="share-button">
+        <span>Look At Me</span>
+        
+        <a href="https://github.com/hzqyihui" target="_blank"><i style="font-size: 20px;"><img class="icon"
+                    src="https://hzqyihui.github.io/media/images/github.png" alt=""></i></a>
+        
+        
+        <a onclick="showqq()"><i style="font-size: 20px;"><img class="icon"
+                    src="https://hzqyihui.github.io/media/images/QQ.png" alt=""></i></a>
+        
+        
+        <a href="https://zhihu.com/people/hzq_yihui" target="_blank"><i style="font-size: 20px;"><img class="icon"
+                    src="https://hzqyihui.github.io/media/images/zh.png" alt=""></i></a>
+        
+        
+        
+        
+        
+        <a href="https://music.163.com/#/user/home?id=1318641230" target="_blank"><i style="font-size: 20px;"><img class="icon"
+                    src="https://hzqyihui.github.io/media/images/wyy.png" alt=""></i></a>
+        
+        
+    </div>
+    <div id="qq" style="display:none">77430203</div>
+    <!------------ 加载菜单按钮👇 ------------------------->
+    <div class="menucontainer">
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="首页"></i>&nbsp;<span
+                    data-text="首页">首页</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/archives" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="归档"></i>&nbsp;<span
+                    data-text="归档">归档</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/tags" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="标签"></i>&nbsp;<span
+                    data-text="标签">标签</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/post/about" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="关于"></i>&nbsp;<span
+                    data-text="关于">关于</span>
+            </a>
+        </div>
+        
+        
+
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="https://hzqyihui.github.io/friends" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="友人帐"></i>&nbsp;<span data-text="友人帐">友人帐</span>
+            </a>
+        </div>
+        
+        <!--  -->
+    </div>
+    <!------------ 加载菜单按钮👆 ------------------------->
+    <hr>
+    <style>
+    .copyright {
+        font-size: 15px;
+        color: #d9d9d9;
+    }
+
+
+    @media screen and (min-width: 1200px) {
+        .foot {
+            width: 100%;
+            height: 130px;
+        }
+    }
+
+    @media screen and (max-width: 1200px) {
+        .foot {
+            display: none;
+        }
+    }
+</style>
+
+<body>
+    <div class="foot">
+        <div id="footinfo">Powered by <a href="https://github.com/hzqyihui/" target="_blank">Maxhua</a> | Theme: <a
+                href="https://github.com/850552586/gridea-theme-fog">Fog</a>
+            <div>
+                
+                <div id="sitegotimeDate">载入天数...</div>
+                <div id="sitegotimes">载入时分秒...</div>
+                <div id="cussitetime" style="display:none">02/22/2018</div>
+                
+            </div>
+            <div>
+                
+            </div>
+            <div class="copyright" style="color:white;text-align: center;">
+            </div>
+        </div>
+
+
+
+    </div>
+</body>
+
+<script>
+    //----------------------站点运行时间
+    var now = new Date();
+
+    function createtime() {
+        var sitegotime = document.getElementById("cussitetime").innerHTML + " 00:00:00";
+        var grt = new Date(sitegotime); //此处修改你的建站时间或者网站上线时间 
+        now.setTime(now.getTime() + 250);
+        days = (now - grt) / 1000 / 60 / 60 / 24;
+        dnum = Math.floor(days);
+        hours = (now - grt) / 1000 / 60 / 60 - (24 * dnum);
+        hnum = Math.floor(hours);
+        if (String(hnum).length == 1) {
+            hnum = "0" + hnum;
+        }
+        minutes = (now - grt) / 1000 / 60 - (24 * 60 * dnum) - (60 * hnum);
+        mnum = Math.floor(minutes);
+        if (String(mnum).length == 1) {
+            mnum = "0" + mnum;
+        }
+        seconds = (now - grt) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+        snum = Math.round(seconds);
+        if (String(snum).length == 1) {
+            snum = "0" + snum;
+        }
+        document.getElementById("sitegotimeDate").innerHTML = "本站已安全运行 " + dnum + " 天 ";
+        document.getElementById("sitegotimes").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+    }
+
+    let intervalId = setInterval("createtime()", 250);
+</script>
+
+    </div>
+
+    <img class="moon" src="https://hzqyihui.github.io/media/images/moon.png" onclick="moonlight()">
+    <script src="https://hzqyihui.github.io/media/js/wordshow.js"></script>
+    
+    <!--------------- 左侧菜单栏👆 ------------------------>
+
+    <!----------------- 顶部菜单栏👇 ------------------------>
+    
+    <!----------------- 顶部菜单栏👆 ------------------------>
+
+<!--核心功能加载-->
+<script src="https://hzqyihui.github.io/media/js/mainfunc.js"></script>
+
+<!------------- Fog1.0版本彩蛋👇 -------------->
+    <!-- <section id="terrestrial" class="popup">
+        <a href="#" class="back">&lt; back</a>
+    </section>
+
+    <div class="flycontainer">
+        <div class="flyword">御风飞行中...</div>
+    </div>
+
+    <script>
+        $("#fog_go").click(function(){fog_go()});
+        async function fog_go(){
+            $(".bars").hide()
+            $("#live2d").hide()
+            await sleep(3000);
+            $(".flycontainer").css("display","flex");
+            $(".popup").fadeOut(500)
+            await sleep(2000);
+            var sitename = "MaxHua&#39;s Note";
+            getFogUser(sitename);
+        }
+
+        function fog_goregis(){
+            var sitename = "MaxHua&#39;s Note";
+            var siteurl = "https://hzqyihui.github.io";
+            regisFogUser(sitename,siteurl);
+        }
+        fog_goregis();
+    </script> -->
+<!------------- Fog1.0版本彩蛋👆 -------------->
+<script>
+    function change_topmenu(){
+        tmcolor = "black"
+        tsnamecolor = "antiquewhite"
+        $(".navbar-inverse .navbar-nav>li>a").css("color",tmcolor)
+        $(".navbar-inverse .navbar-brand").css("color",tsnamecolor)
+        $(".navbar-fixed-top").css("border-radius","0 0 10px 10px")
+    }
+</script>
+
+<!------ 根据自定义配置声明变量👇 --------------------->
+    
+    <script>
+        var postnumChoice = false
+    </script>
+    
+    
+    <script>
+        var shareChoice = false
+    </script>
+    
+    
+    <script>
+        var donateChoice = false
+    </script>
+    
+    
+    <script>
+        var searchChoice = true
+    </script>
+    
+    <script>let postsnum = 0;</script>
+    <div id="side-posttitle" style="display: none;">
+    
+    
+    Rocket基本概念：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Rocket安装和配置
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Dockerfile 的语法使用：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    HTTP版本：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    HTTP请求响应过程：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    sed命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    xargs命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    firewall命令（防火墙）：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    nohup 命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    安装 FFmpeg：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    umask命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    shell 笔记：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    GIT分支与工作流
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    netstat命令：查看端口占用
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    nl命令：带行号查看文件
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Git奇难杂症：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    stat命令： 查看文件的修改
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    各类查找命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    date命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    find 命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Linux进程，内存查看
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    tree命令
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    locate 命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Zsh 插件安装：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Linux系统基本知识点
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Linux操作提升效率
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    VIM学习笔记：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    crontab
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    环境变量etc profile文件解析：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Linux etc sudoers文件说明：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Linux 用户，用户组相关命令
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    ln命令：对文件做链接，类似Windows的快捷方式
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    df
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    chmod：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    tar命令：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    GIT 原理   ：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    
+    
+    tmux使用
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Debian9学习笔记：
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Docker学习笔记
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    在Debian9安装Docker
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Git学习笔记
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    </div>
+    
+        <script>
+            var menupos = 'left';
+            $("#siteinfo-postsnum").html(postsnum);
+        </script>
+    
+    <script>
+        let commentsHide = false
+    </script>
+    <!------ 根据自定义配置声明变量👆 --------------------->
+
+
+    <!----------根据自定义配置设置图标信息👇---------->
+    <script>
+        var icondict = new Array();
+    </script>
+    
+        
+    
+    <!----------根据自定义配置设置图标信息👆---------->
+</body>
+
+<script src="https://hzqyihui.github.io/media/share/dist/Share.js"></script>
+<!-- 页面pjax测试 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery.pjax/2.0.1/jquery.pjax.js"></script>
+<!--确保jQuery已经在此之前加载-->
+<!-- <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script> -->
+<script src="https://hzqyihui.github.io/media/js/all-pjax.js"></script>
+<script>
+    //-------------------------------说说功能👇--------------------------------------
+    let talksall = [];
+    let talks = [];
+    let talkindex = 0;
+    get();
+
+    function get() {
+        var t = JSON.parse('[{"author":"","img":"","text":"","time":""}]');
+        talkindex = t.length - 1;
+        for (var i = 0; i <= t.length - 1; i++) {
+            var d = {};
+            d["time"] = t[i].time;
+            d["author"] = t[i].author;
+            d["text"] = t[i].text;
+            d["img"] = t[i].img;
+            talksall.push(d);
+        }
+    }
+
+    function add() {
+        for (var i = talkindex; i >= 0 && i > talkindex - 3; i--) {
+            talks.push(talksall[i]);
+        }
+        talkindex = (talkindex - 3) >= 0 ? (talkindex - 3) : -1;
+        if (talkindex < 0) $("#getmorebt").hide();
+        show();
+    }
+
+    function show() {
+        var talkT = document.getElementById("talkContainer");
+        talkT.innerHTML = "";
+        for (var i = 0; i < talks.length; i++) {
+            if (talks[i].img != '') {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <span data-fancybox="images" href="' + talks[i].img + '"><img src="' + talks[i].img + '" class="talkimg"></span> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            } else {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            }
+        }
+    }
+    //-------------------------------说说功能👆--------------------------------------
+</script>
+
+<!---->
+<script>
+    function replaceAvatar() {
+        twikoo_avatar = $(".tk-avatar-img");
+        for (var i = 0; i < twikoo_avatar.length; i++) {
+            var asrc = twikoo_avatar.eq(i).attr('src');
+            if (asrc.search('cn.gravatar.com') != -1) {
+                twikoo_avatar.eq(i).attr('src', 'https://hzqyihui.github.io/media/images/comavatar.png');
+            }
+        }
+    }
+
+    function showWechat() {
+        var wechat = '';
+        alert("博主微信号：" + wechat);
+        return false;
+    }
+</script>
+
+<script>
+    /**
+     * https://github.com/tangkaichuan/gridea-search
+     */
+    // 检查缓存是否最新
+    function checkCache() {
+        var caches_postsnum = localStorage.getItem("postsnum");
+        var pt = document.getElementById("side-posttitle").innerHTML;
+        pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "")
+        var ptlen = pt.length;
+        var ptlen_storage = localStorage.getItem("poststitlelen");
+        if (caches_postsnum != postsnum || ptlen != ptlen_storage) {
+            console.log("更新缓存");
+            return false
+        }
+        return true;
+    }
+
+    (function () {
+        var CACHES = checkCache()
+        if (!CACHES) {
+            var NOW = Date.now()
+            var API_CONTENT = '../api-content/index.html' + '?_=' + NOW
+            preload(API_CONTENT);
+            getContents(show_getContentresult);
+        }
+
+        function show_getContentresult(data) {
+            console.log("获取成功");
+            var postslen = data["posts"].length;
+            localStorage.setItem('postsnum', postslen);
+            var poststitlelen = 0;
+            var pt = document.getElementById("side-posttitle").innerHTML;
+            pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "");
+            localStorage.setItem('poststitlelen', pt.length);
+        }
+
+
+
+        // preload
+        function preload(url) {
+            var preloadLink = document.createElement('link')
+            preloadLink.href = url
+            preloadLink.rel = 'preload'
+            preloadLink.as = 'fetch'
+            preloadLink.crossOrigin = 'anonymous'
+            document.head.appendChild(preloadLink)
+        }
+
+        // 异步 GET 请求
+        function get(obj) {
+            var xhr = new XMLHttpRequest()
+            xhr.open('get', obj.url, true)
+            xhr.send(null)
+            xhr.onreadystatechange = function () {
+                // 异步请求：响应状态为4，数据加载完毕
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        obj.success(xhr.responseText)
+                    } else {
+                        obj.error(xhr.status)
+                    }
+                }
+            }
+        }
+
+        // 获取博客全文 api
+        function getContents(callback) {
+            if (CACHES) {
+                callback(CACHES.contents)
+            } else {
+                get({
+                    url: API_CONTENT,
+                    success: function (data) {
+                        callback(JSON.parse(data));
+                        localStorage.setItem('ContentsCache', data);
+                        getStorageContent();
+                    }
+                })
+            }
+        }
+    })()
+    //------------------------核心功能--pjax全局渲染👇-------------------
+    let talkinit = false;
+    $(document).pjax('a[data-pjax]', '#main', {
+        fragment: '#main',
+        timeout: 8000
+    }).on('pjax:complete', function () {
+        //代码块高亮渲染
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
+        //文章热度
+        if(postnumChoice){
+            getHotnum();
+        }
+        //文章索引
+        toginit();
+        //清空搜索栏
+        if (searchChoice) {
+            searchInit();
+            searchInput.value = "";
+        }
+        var pl = window.location.pathname;
+        //说说更新
+        if (pl.search("talk") != -1 && !talkinit) {
+            add();
+            talkinit = true;
+        } else if (pl.search("talk") != -1) {
+            show();
+        }
+        if (pl.search("post") != -1) {
+            if (shareChoice)
+                shareInit();
+            if (donateChoice)
+                donateInit();
+            if ("default" == "default"&&!commentsHide) {
+                $("#comment").hide()
+                commentsHide = true
+            }
+            lazyload();
+            codeinit();
+            if ("default" == "twikoo") {
+                //twikoo头像更换
+                setTimeout(replaceAvatar, 3000);
+                setTimeout(replaceAvatar, 8000); //部分博主站点速度加载过慢，再添加一个延迟
+            }
+        }
+        if (btstate == true)
+            dropdown();
+    }).on('pjax:start', function () {
+        $(".pjaxloading").fadeIn(50);
+    }).on('pjax:end', function () {
+        $(".pjaxloading").fadeOut(50);
+    });
+    //------------------------核心功能--pjax全局渲染👆-------------------
+
+    //-------------------------------------------------搜索
+    // 获取搜索框、搜索按钮、清空搜索、结果输出对应的元素
+    if (searchChoice) {
+        var searchInput = document.querySelector('.search-input');
+        var searchResults = document.querySelector('.search-results');
+    }
+    // 申明保存文章的标题、链接、内容的数组变量
+    var searchValue = '',
+        arrItems = [],
+        arrLinks = [],
+        arrTitles = [],
+        arrContents = [],
+        arrResults = [],
+        indexItem = [],
+        itemLength = 0;
+    var tmpDiv = document.createElement('div');
+    tmpDiv.className = 'result-item';
+
+
+    function getStorageContent() {
+        var data = localStorage.getItem('ContentsCache');
+        data = JSON.parse(data);
+        posts = data["posts"];
+        for (var i = 0; i < posts.length; i++) {
+            arrLinks[i] = posts[i].link;
+            arrTitles[i] = posts[i].title;
+            arrContents[i] = posts[i].content;
+            itemLength++;
+        }
+    }
+    if (checkCache())
+        getStorageContent();
+    // 输入框内容变化后就开始匹配，可以不用点按钮
+    // 经测试，onkeydown, onchange 等方法效果不太理想，
+    // 存在输入延迟等问题，最后发现触发 input 事件最理想，
+    // 并且可以处理中文输入法拼写的变化
+    searchInput.oninput = function () {
+        setTimeout(searchConfirm, 0);
+    }
+    searchInput.onfocus = function () {
+        searchResults.style.display = 'block';
+    }
+
+    function searchConfirm() {
+        if (searchInput.value == '') {
+            searchResults.style.display = 'none';
+        } else if (searchInput.value.search(/^\s+$/) >= 0) {
+            // 检测输入值全是空白的情况
+            searchInit();
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '请输入有效内容...';
+            searchResults.appendChild(itemDiv);
+        } else {
+            // 合法输入值的情况
+            searchInit();
+            searchValue = searchInput.value;
+            // 在标题、内容中查找
+            searchMatching(arrTitles, arrContents, searchValue);
+        }
+    }
+
+    // 每次搜索完成后的初始化
+    function searchInit() {
+        arrResults = [];
+        indexItem = [];
+        searchResults.innerHTML = '';
+        searchResults.style.display = 'block';
+    }
+
+    function searchMatching(arr1, arr2, input) {
+        // 忽略输入大小写
+        input = new RegExp(input, 'i');
+        var step = 10;
+        // 在所有文章标题、内容中匹配查询值
+        for (i = 0; i < itemLength; i++) {
+            var indexContent = arr2[i].search(input);
+            //标题匹配
+            if (arr1[i].search(input) != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+                if (indexContent != -1) {
+                    startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                    var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                    arrResults.push("....." + searchcontent + ".....");
+                } else
+                    arrResults.push("");
+            }
+            //内容匹配
+            else if (indexContent != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+
+                startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                arrResults.push("....." + searchcontent + ".....");
+            }
+        }
+
+        // 输出总共匹配到的数目
+        var totalDiv = tmpDiv.cloneNode(true);
+        totalDiv.innerHTML = '<b>总匹配：' + indexItem.length + ' 项<hr></b>';
+        searchResults.appendChild(totalDiv);
+
+        // 未匹配到内容的情况
+        if (indexItem.length == 0) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '未匹配到内容...';
+            searchResults.appendChild(itemDiv);
+        }
+
+        // 将所有匹配内容进行组合
+        for (i = 0; i < arrResults.length; i++) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerHTML = '<a data-pjax class="searchresults" href="' + arrLinks[indexItem[i]] + '"><b>[' +
+                arrTitles[indexItem[i]] +
+                ']</b><p>' + arrResults[i] + '</p></a><hr />';
+            searchResults.appendChild(itemDiv);
+        }
+    }
+</script>
+
+
+
+<!--------------------- 菜单栏图标加载功能👇 ----------------------->
+<script>
+var menulist = $(".menuicon");
+var menulength = menulist.length;
+for (var i = 0; i < menulength; i++) {
+    var altname = menulist.eq(i).attr("alt");
+    var iconurl = icondict[altname];
+    if (iconurl == undefined || iconurl == '')
+        continue;
+    if (iconurl == 'Home') {
+        menulist.eq(i).attr("src", "https://hzqyihui.github.io/media/images/Home.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Archive') {
+menulist.eq(i).attr("src", "https://hzqyihui.github.io/media/images/Archive.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Tag') {
+menulist.eq(i).attr("src", "https://hzqyihui.github.io/media/images/Tag.png");
+menulist.eq(i).show();
+} else if (iconurl == 'About') {
+menulist.eq(i).attr("src", "https://hzqyihui.github.io/media/images/About.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Talk') {
+menulist.eq(i).attr("src", "https://hzqyihui.github.io/media/images/Talk.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Friends') {
+menulist.eq(i).attr("src", "https://hzqyihui.github.io/media/images/Friends.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Fly') {
+menulist.eq(i).attr("src", "https://hzqyihui.github.io/media/images/wind.png");
+menulist.eq(i).show();
+} else {
+menulist.eq(i).attr("src", iconurl);
+menulist.eq(i).show();
+}
+}
+</script>
+<!--------------------- 菜单栏图标加载功能👆 ----------------------->
+
+<script>
+    //--------------------bber-onetalk加载👇--------------------------------
+    function bberonetalkLoad(){
+        bberjsonurl = '';
+        if ( $("#bber-talk").length > 0 ) {
+        jsonUrl = bberjsonurl
+        $.getJSON(jsonUrl+"?t="+Date.parse( new Date()),function(res){
+        var bberHtml = ''
+        $.each(res.data, function(i, item){
+            d = new Date(item.date)
+            date = d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate() +' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()
+            dataTime = '<span class="datatime">'+date+'</span>'
+            bberHtml += '<li class="item item-'+(i+1)+'">'+dataTime+'： <a data-pjax href="https://hzqyihui.github.io/bber">'+item.content+'</a></li>'
+        });
+        $('#bber-talk').append('<span class="index-talk-icon"><svg viewBox="0 0 1024 1024" width="21" height="21"><path d="M184.32 891.667692c-12.603077 0-25.206154-2.363077-37.809231-7.876923-37.021538-14.966154-59.864615-49.624615-59.864615-89.009231v-275.692307c0-212.676923 173.292308-385.969231 385.969231-385.969231h78.76923c212.676923 0 385.969231 173.292308 385.969231 385.969231 0 169.353846-137.846154 307.2-307.2 307.2H289.083077l-37.021539 37.021538c-18.904615 18.116923-43.323077 28.356923-67.741538 28.356923zM472.615385 195.347692c-178.018462 0-322.953846 144.935385-322.953847 322.953846v275.692308c0 21.267692 15.753846 29.144615 20.48 31.507692 4.726154 2.363077 22.055385 7.876923 37.021539-7.08923l46.473846-46.473846c6.301538-6.301538 14.178462-9.452308 22.055385-9.452308h354.461538c134.695385 0 244.184615-109.489231 244.184616-244.184616 0-178.018462-144.935385-322.953846-322.953847-322.953846H472.615385z"></path><path d="M321.378462 512m-59.076924 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M518.301538 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M715.224615 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153846 0 59.076923 59.076923 0 1 0-118.153846 0Z"></path></svg></span><ul class="talk-list">'+bberHtml+'</ul>')
+        //Lately({ 'target': '#bber-talk .datatime' });
+        });
+        function Roll (){
+        var list_li = $('.talk-list li'),cur_li = list_li.first(),last_li = list_li.last();
+        last_li.after(cur_li);
+        };
+        setInterval(Roll,3000);
+    }
+    }
+  //--------------------bber-onetalk加载👆--------------------------------
+</script>
+
+<script>
+    var ClicksideState = 1
+    var cur_readingmode = false
+    function readingmode(){
+        if (!cur_readingmode){
+            if(menupos == 'left'){
+                if(ClicksideState==1)
+                menu_openclose1()
+            }
+            $("#tab1").fadeOut(50)
+            $("#bg").fadeOut(50)
+            $(".navbar").fadeOut(50)
+            $(".markdownIt-TOC li a").css("color","black")
+            cur_readingmode = true
+        }else{
+            if(menupos == 'left'){
+                if(ClicksideState==0)
+                    menu_openclose1()
+            }
+            $("#tab1").fadeIn(50)
+            $("#bg").fadeIn(50)
+            $(".navbar").fadeIn(50)
+            $(".markdownIt-TOC li a").css("color","antiquewhite")
+            cur_readingmode = false  
+        }
+    }
+</script>
+
+
+<!----夜间模式👇-->
+<script>
+    var moonlightState = false
+    function moonlight(){
+        if(!moonlightState){
+            $("#bg").fadeOut(200)
+            $('body').css("background","rgba(0,0,0,0.8)")
+            $(".markdownIt-TOC li a").css("color","white")
+            $(".text p, .text ul").css("color","white")
+            $("#articlecontent").css("color","white")
+            $(".post-copyright").css("background","rgba(10,10,10,0.5)")
+            $('blockquote').css("background","rgba(10,10,10,0.6)")
+            $("#articlecontent").css("background","rgba(10,10,10,0.5)")
+            moonlightState = true
+            $(".moon").attr("src","https://hzqyihui.github.io/media/images/sun.png")
+        }else{
+            $("#bg").show()
+            $(".markdownIt-TOC li a").css("color","antiquewhite")
+            $(".text p, .text ul").css("color","rgba(0, 0, 0, 0.7)")
+            $("#articlecontent").css("color","black")
+            $(".post-copyright").css("background","#f9f9f9")
+            $('blockquote').css("background","#eff8f0")
+            $("#articlecontent").css("background","white")
+            $(".moon").attr("src","https://hzqyihui.github.io/media/images/moon.png")
+            $('body').css("background","white")
+            moonlightState = false
+        }
+    }
+</script>
+<!----夜间模式👆--></div>
+            <!--------------- pc端菜单栏👆 ---------------->
+
+            <!-- ----------------左侧菜单栏html 👇-------------------------------------->
+            
+            <div>
+                <div id="tab1" class="tab">
+                    <div class="bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="close"></div>
+                </div>
+                <div class="col-md-1 col-lg-3"></div>
+                <!-- main标签，pjax渲染时加载以下内容👇 -->
+                <div id="main" class="col-xs-12 col-sm-12 col-md-12 col-lg-7" style="padding:0;">
+                    <div class="readingmode" onclick="readingmode()">阅</div>
+                    <link rel="stylesheet" href="https://hzqyihui.github.io/media/css/font-awesome.css">
+
+<body>
+    <div class="allcontent" id="postdetail">
+        <div class="postshow postpadding" style="padding-bottom: 0;">
+            
+            <div class="postdetailimg">
+                <img src="https://oss.maxhua.cn/surface_cover/54lqq0.jpeg" class="postimage" style="cursor:auto">
+            </div>
+            <div class="postinfo-detail">
+                <div class="postdate"><i class="fa fa-calendar"></i>2019-03-10</div>
+                <div class="poststatus postdate"><i class="fa fa-clock-o"></i> 16 min read</div>
+                <div class="posttag">
+                    
+                    <a data-pjax href="https://hzqyihui.github.io/tag/K7ydHaL8j/" class="postlink">
+                        <i class="fa fa-tag"></i> Git
+                    </a>
+                    
+                </div>
+            </div>
+            
+        <div id="articlecontent">
+            <div id="texttitle" style="text-align: center">
+                <h2 id="ptitle">GIT 原理   ：</h2>
+                <!-- id 将作为查询条件 -->
+                <div id="pl" style="display:none">https://hzqyihui.github.io/post/git-yuan-li/</div>
+                <div id="rootaddr" style="display:none">https://hzqyihui.github.io</div>
+                
+            </div>
+            <div class="text ">
+                <p><strong>Git 是一套内容寻址文件系统。很不错。不过这是什么意思呢？ 这种说法的意思是，Git 从核心上来看不过是简单地存储键值对（key-value）。它允许插入任意类型的内容，并会返回一个键值，通过该键值可以在任何时候再取出该内容。</strong></p>
+<p>我们都知道当我们初始化一个仓库的时候，也就是执行以下命令后，文件夹内会生成一个.git文件夹，</p>
+<pre><code>git init
+</code></pre>
+<p>内部会包含，以下文件夹。<br>
+<img src="https://oss.maxhua.cn/git/download.png" alt="file" loading="lazy"></p>
+<ul>
+<li>hooks   //钩子文件夹，内部文件实际上就是一些特定时间触发的shell脚本，我们可以简单的做一个部署系统，每次提交特定tag的时候，则部署最新的代码到服务器。</li>
+<li>objects   //真正的内容存放的文件夹，下面重点讲下这里。</li>
+<li>refs  //refs目录存放了各个分支（包括各个远端和本地的HEAD）所指向的commit对象的指针（引用），也就是对应的sha-1值；同时还包括stash的最新sha-1值</li>
+<li>config    //git配置信息，包括用户名，email，remote repository的地址，本地branch和remote branch的follow关系</li>
+<li>HEAD      //存放的是一个具体的路径，也就是refs文件夹下的某个具体分支。意义：指向当前的工作分支。项目中的HEAD 是指向当前 commit 的引用，它具有唯一性，每个仓库中只有一个 HEAD。在每次提交时它都会自动向前移动到最新 的 commit</li>
+<li>index     //存放的索引文件，可使用 git ls-files --stage 查看。应该zlib加密后的，PHP可使用gzdeflate()函数</li>
+</ul>
+<p>这是objects文件夹，可以看到都是些数字和字符，实际上就是十六进制数。</p>
+<p><img src="https://oss.maxhua.cn/git/objects.png" alt="file" loading="lazy"><br>
+下图是进入00文件夹后所有文件。</p>
+<figure data-type="image" tabindex="1"><img src="https://oss.maxhua.cn/git/objects_00.png" alt="file" loading="lazy"></figure>
+<h3 id="认识下git对象-blob对象-tree对象-commit对象">认识下GIT对象：  <strong>blob对象</strong>， <strong>tree对象</strong>， <strong>commit对象</strong></h3>
+<h2 id="1创建blob对象">1.创建blob对象</h2>
+<p>  下面我们直接上底层命令， 运行此命令后，会在 .git/objects 文件夹下生成一个 两个字符 的文件夹，文件夹内部文件即类似上图中文件一样。</p>
+<pre><code>echo 'test'  | git hash-object -w --stdin
+git hash-object -w test.txt
+</code></pre>
+<p>分解命令：</p>
+<pre><code>hash-object: 计算文本内容的sha-1（哈希值）
+-w  :        加上此参数后，会把内容写入/objects文件夹，不加则仅仅是计算（不可使用此法单纯做计算用，因为GIT计算的HASH，其基础内容与原内容有所区别）
+--stdin  :   此参数接收来自于标准输入的内容，即前面的  echo 'test'; 不加此参数，则直接写入某个文本
+</code></pre>
+<p>所以实际上我们看到的，objects 文件夹下的内容，文件名实际上是 hash 值。文件夹是40个字符的前两个（拥有相同前2位的hash值会被分配到同一个文件夹中）， 具体文件名则是后面38个字符。使用hash值的原因就在于，位数够多，并且hash值唯一，一点小变化，都会生成新的hash值，和md5算法是一样的道理。</p>
+<p><font color="red"><strong>注意：此hash值就像是GIT的指针，能唯一对应某一个具体的内容或提交，hash值作为寻址作用，不作为内容存储用，具体的文件内容存储方式是GIT更底层的存储方式决定。（sha-1和md5一样，均是不可逆的）</strong></font></p>
+<p>通过Linux find 命令查看所有已存储的hash文件：</p>
+<pre><code>find .git/objects -type f
+</code></pre>
+<p>通过 <strong>cat-file</strong> 命令可以将数据内容取回。该命令是查看 Git 对象的瑞士军刀。传入 -p 参数可以让该命令输出数据内容的类型：</p>
+<pre><code>git cat-file -p d670460b4b4aece5915caf5c68d12f560a9fe3e4
+test content
+</code></pre>
+<p>通过 <strong>hash-object</strong> 命令，会把每一个文件的内容都给记录下来， 以此生成一个blob对象。可通过以下命令查看对象的类型</p>
+<pre><code>git cat-file -t d670460b4b4aece5915caf5c68d12f560a9fe3e4
+blob
+</code></pre>
+<p>在实际项目过程中，不会这么简单，因为我们每次提交都是一个多文件的提交。很少的时候是单文件的，那此时Git就不是单单存储一个 blob对象了，而是 tree对象，<br>
+tree对象，见名知意，就是一个树对象，类似于操作系统目录，tree的分支，可能还是tree，也可能是blob，这就看实际的场景了。</p>
+<p>对象存储方法：<br>
+GIT使用 zlib 库 的 deflate方法对数据内容进行压缩，但内容为 &quot;blob 字符串长度+空字节+字符串本身&quot;； 如：</p>
+<pre><code>blob 3\0aaa
+</code></pre>
+<h2 id="2创建tree对象">2.创建tree对象</h2>
+<p>  上面说的创建blob对象，仅仅只是对某一个文件进行的计算与存储，而我们实际项目中，可能每一次操作都是好几个，甚至十几个文件一起，那如何才能把他们组织到一起，这就是 tree 对象的作用了。<br>
+要创建tree对象，需要使用 <strong>update-index</strong>，<strong>write-tree</strong> 命令：</p>
+<pre><code>git update-index --add a.txt    //此命令即可将a.txt加入到暂存区，
+git write-tree                  //此命令即写入tree对象。
+or
+git update-index --add --cacheinfo 100164 sha-1 a.txt    
+git write-tree
+</code></pre>
+<p>  --cacheinfo 会从已存在的数据库（Object）中取得对应的内容给添加到索引中。<br>
+  实际生产中，一般情况下，会把末尾文件夹中的所有修改文件创建，blob对象，再对该文件夹（也就是所有的blob对象整体）进行write-tree的操作，得到一个tree对象，反复进行此操作，最后得到多个tree对象和多个blob对象。<br>
+  如上所说，若需要对某个存在三级文件夹的二级文件夹进行write-tree操作， 在把三级文件夹下的所有修改文件生成blob后，进行整体tree对象化，之后再与二级文件夹同级的文件夹和文件进行相同操作。此时就需要用到： read-tree 命令。如：</p>
+<pre><code>git read-tree --prefix=test_add_tree c08670e3f77cae748fbda5c0b83613d5f5995655	
+//该操作会把tree对象b822ff7272492f12b211d3b9c0f90163f48383bb 加入暂存区中，并取名test，之后再进行write-tree就把tree对象b822ff7272492f12b211d3b9c0f90163f48383bb 给加入了
+//从实际生产来看，GIT会把此prefix默认为文件夹的名字
+git cat-file -p dc054e0c59565791c70a1f6d6ad7d6676baf0349                     
+100644 blob 765dc741c088b3baef0314a457f74c877a43405b	a.txt
+100644 blob 7609a432a0ba538cfe3d7bbdb107096c2f010577	b.txt
+100644 blob b114c2d776f5dd25dc75a2c7a81f99262d618bc3	c.txt
+040000 tree c08670e3f77cae748fbda5c0b83613d5f5995655	test_add_tree
+</code></pre>
+<h2 id="3创建commit对象">3.创建commit对象</h2>
+<p>  平时我们都是用** git commit -m &quot;xxxx&quot;** 提交了信息， 在这之前，会暂存相关文件的改动， 在提交后，会生成对应的tree对象，返回tree所对应的 sha-1值， 再进行一次 commit-tree 操作，最后会把刚保存的tree对象所对应的sha-1值 赋值给 commit-tree， 即生成了一个commit 对象。用法：</p>
+<pre><code>echo '提交信息' | git commit-tree b822ff7272492f12b211d3b9c0f90163f48383bb （对应的tree对象返回的 sha-1值）
+f7bc39001ff6cb183022234c94aa61ddedee44e0
+</code></pre>
+<p>通过 <strong>git cat-file -p f7bc39001ff6cb183022234c94aa61ddedee44e0</strong> 得到：</p>
+<pre><code>tree b822ff7272492f12b211d3b9c0f90163f48383bb                     //该commit对象指向的tree对象
+author max.hua &lt;****@****.cn&gt; 1563847402 +0800           //config中指定的user.name信息
+committer max.hua &lt;****@****.cn&gt; 1563847402 +0800        //config中指定的user.email信息
+
+first commit
+</code></pre>
+<p>我们还可以给某一个commit对象指定它的父commit对象：</p>
+<pre><code>echo 'second commit' | git commit-tree b822ff7272492f12b211d3b9c0f90163f48383bb -p f7bc39001ff6cb183022234c94aa61ddedee44e0 (父级commit对象sha-1值)
+42e08b70c341b7e60944de6dffc342b77f94f6e4
+</code></pre>
+<p>通过 git cat-file -p 42e08b70c341b7e60944de6dffc342b77f94f6e4得到：</p>
+<pre><code>tree b822ff7272492f12b211d3b9c0f90163f48383bb 
+parent f7bc39001ff6cb183022234c94aa61ddedee44e0                    //指向的父级commit对象
+author max.hua &lt;****@****.cn&gt; 1563848153 +0800
+committer max.hua &lt;****@****.cn&gt; 1563848153 +0800
+
+second commit
+</code></pre>
+<p>想要查看我们使用管道命令生成的log记录： git log --stat 42e08b70c341b7e60944de6dffc342b77f94f6e4 ,得到：</p>
+<pre><code>git log --stat 42e08b70c341b7e60944de6dffc342b77f94f6e4
+commit 42e08b70c341b7e60944de6dffc342b77f94f6e4
+Author: max.hua &lt;****@****.cn&gt;
+Date:   Tue Jul 23 10:15:53 2019 +0800
+
+    second commit
+
+commit f7bc39001ff6cb183022234c94aa61ddedee44e0
+Author: max.hua &lt;****@****.cn&gt;
+Date:   Tue Jul 23 10:03:22 2019 +0800
+
+    first commit
+
+ a.php | 6 ++++++
+ b.txt | 1 +
+ c.txt | 1 +
+ 3 files changed, 8 insertions(+)
+</code></pre>
+<p>  从上面的用法可以得到， git commit-tree 生成的 commit对象，只会包含 tree对象，参数选项中没有可以指定blob对象的参数。<br>
+如下：在测试时，强制使用blob对象的 sha-1值，会出现报错现象。</p>
+<pre><code>echo '第一次提交' | git commit-tree e56e15bb7ddb6bd0b6d924b18fcee53d8713d7ea
+fatal: e56e15bb7ddb6bd0b6d924b18fcee53d8713d7ea is not a valid 'tree' object
+</code></pre>
+<h2 id="4应用">4.应用</h2>
+<p>以上基本上就可概括平时使用git add 和 git commit 命令时GIT的工作。</p>
+<ol>
+<li>保存已修改文件成blob格式对象： <font color="red">git hash-object -w  各个文件</font></li>
+<li>更新索引：  <font color="red">git update-index --add 各个文件名  或者  git update-index --add --cacheinfo mode sha-1 文件名  或者  git read-tree --prefix=test sha-1(某个tree的sha-1) ，作用在于把某个tree读入索引中</font></li>
+<li>创建树对象:  <font color="red">git write-tree</font></li>
+<li>最后创建commit对象： <font color="red">git commit-tree sha-1 -m &quot;提交信息&quot;  或者  echo &quot;提交信息&quot;  | git commit-tree sha-1 -p 父级sha-1</font></li>
+</ol>
+<h3 id="41-git-add">4.1 git add</h3>
+<p>  平时我们在使用的时候，使用 <strong>git add c.txt</strong> 后，把 c.txt 放入了暂存区， 而实际上此时已经生成了blob对象，并保存了相应的sha-1值命名的文件，同时添加到了索引文件中；之后当我们修改了之前添加到暂存区的文件并使用 <strong>git status</strong> 查看状态的时候，GIT会再对文件进行一次 hash运算，如果发现和已存在与索引中的内容产生了变化（sha-1值不同），则又会呈现出一个 Modify 状态。</p>
+<p>  通过以下命令可查看到 <strong>.git/index</strong> 文件中的内容，其中存放了每一个被追踪的文件，对应的blob对象最新的sha-1值， 通过这里即可很直接的判断出哪个文件是否被修改，哪些没有被追踪了。</p>
+<pre><code>git ls-files --stage
+100644 45c2647671db4e9d426c2085eba814fea16f6b9a 0       b.txt
+100644 177308c04fc55b0d9985a7dfb545f6cebb7ea432 0       c.txt
+</code></pre>
+<h3 id="42-git-diff">4.2 git diff</h3>
+<p>  同上， 使用 git diff后， 会把文件的差异给列出来，而对比对象即是 索引中的内容，并不是HEAD指向的内容。 当对某文件执行了 git add 后，之后再进行修改，再使用git diff 查看区别， 你会发现已经存在区别了。也就是说，git diff 实际上是把当前文件与索引中的文件进行比较（通过sha-1值比较），当有不同的情况，则列出对应的改变。</p>
+<h3 id="43-git-status">4.3 git status</h3>
+<p>  使用 git status 后，GIT会对所有文件进行sha-1值计算，若计算到与前面讲到的 索引中得对应文件的sha-1值不同了，则代表有所改动，则标记为 Modify，若发现索引中不存在对应文件的sha-1值， 则标记为 Untracked files。</p>
+<h3 id="44-git-branch-分支名">4.4 git branch 分支名</h3>
+<p>  该命令会生成一个新分支，也就是在 .git/refs/heads里面生成一个新的文件，文件名为分支名，如果有前缀feature之类的。则feature是文件夹名，其内是文件名。文件内容为当前的 commit 对象对应的sha-1值。所以实际上分支，也是一个 commit 对象的引用。只是在GIT中专门有文件记录了分支名和指向。我们甚至可以通过创建文件的方式，直接创建branch。</p>
+<pre><code>cd .git/refs/head/
+echo 'e56e15bb7ddb6bd0b6d924b18fcee53d8713d7ea' &gt; test_aaa
+</code></pre>
+<h3 id="45-git-checkout-某分支">4.5 git checkout 某分支</h3>
+<p>  当使用 git checkout 的时候， GIT内部实际上就是把当前的HEAD指针给指向了另一个分支，而实际上也就是把 .git/HEAD 文件内容修改为切换的分支，而 .git/HEAD 内容指向的就是 .git/refs/heads中的分支，此文件内容又是一个 commit 对象的 sha-1值，所以也就间接指向了某个具体的 commit对象了， 从这个commit对象可得到它的父级对象，依次类推，即可得到完整的代码。</p>
+<pre><code>git update-ref HEAD &lt;newvalue&gt;
+</code></pre>
+<p>  有时候，我们在使用PHPStorm的时候，会用到&quot;Annotate&quot;， 就是查看本文件的GIT提交记录，还会查看某个提交下以前的版本的文件，看具体是修改了啥。&quot;Amnotate previous revision&quot;，实际上就是做了</p>
+<pre><code>git checkout sha-1 文件名      //该命令就会把某文件给恢复到某个提交的时候，不加文件名的话，就是恢复整个项目到某个提交的时候
+</code></pre>
+<h3 id="46-git-commit-m-提交信息">4.6 git commit -m &quot;提交信息&quot;</h3>
+<p>  见如上信息。</p>
+<h3 id="47-git-log">4.7 git log</h3>
+<p>  使用该命令后，去 .git/logs 下寻找当前分支对应的文件名，文件中的内容即为每一次提交的信息。</p>
+<h3 id="48-git-push">4.8 git push</h3>
+<p>  使用git push 是把当前的分支上传到远程仓库，并把这个 branch 的路径上的所有 commits 也一并上传。 我认为实际就是修改了.git中的文件，因为这些文件里实际上就已经包含了压缩后的代码，等你切换分支的时候，GIT会根据这些内容把代码给检索出来。</p>
+<h3 id="49-git-tag-version-name">4.9 git tag [version name]</h3>
+<p>  使用 git tag 实际上和 git branch 类似，branch 是指向某一个commit的指针，但是branch会随着每次提交而移动， 但是tag不会， 当打了tag后， 那这个 tag 对应的commit对象指针就固定了，不会移动了。它和 git branch 一样，都不会产生blob或 tree 对象， git tag 只会在 .git/refs/tag 下生成一个 tag名的文件，内容为指向当前commit的sha-1</p>
+<h3 id="410-git-stash">4.10 git stash</h3>
+<p>  使用git stash 实际上是创建了一个新的commit对象，为什么这么说呢？在 .git/refs 目录下，当第一次stash后，会生成一个 stash文件， 内容即为一个sha-1值， 通过 git cat-file -p查看到具体内容为一个 commit对象的内容， 还能看到其有两个 父级 commit， 一个是前一个 git commit 的sha-1值， 一个是执行stash后，新生成的commit。最后把这两个commit对象作为父亲，再生成一个commit对象存放于stash文件中。<br>
+<img src="https://oss.maxhua.cn/git/1451990518-5da1681b746ca_articlex.png" alt="file" loading="lazy"></p>
+<p>疑问：</p>
+<ol>
+<li>
+<p><font color="red">git commit-tree的时候，是怎么指定父级commit对象的，以什么为参考，才能指定对应的父级commit对象。我从平时工单的log记录来看，有些commit对象有两个父级commit对象（可能是合并操作的时候自动生成的commit对象），但不一定就是前一个commit。(git stash 有两个父级对象)  </font></p>
+</li>
+<li>
+<p><font color="red">我们都知道git stash 存的是一个栈的结构，但是 .git/refs/stash 文件里 只有一个sha-1值，只对应一个commit对象，我查看了commit对象的具体内容，他的两个父亲均不是我前一个创建的stash对应的commit对象，不知道这个栈的结构怎么来的。</font></p>
+</li>
+<li>
+<p><font color="red">看某项目的树结构，会发现，每一个commit对象内部对应的 tree，都是一整个项目，而不是某一个文件或者某几个文件夹，这就解决了我的疑惑， 每次只需 git update-index --add 后，我想新创建一个 tree对象， tree对象内部一直会存在之前加入index中的blob对象。 那么GIT实际上就是每一个commit，都应该能从tree和 p-tree上追溯到整个项目文件。</font></p>
+</li>
+<li>
+<p><font color="red">在手动创建分支的过程中，发现在执行 git init后，看起来你是在master分支， 但是实际执行 git branch，看不到任何输出，这说明在这个时候实际上master分支是没有创建的，必须要有第一次提交后，master分支才会创建，因为只有这样 ， .git/refs/head/master 文件中才有可写的 commit 对象的 sha-1值。</font></p>
+</li>
+</ol>
+<p>需要注意：对commit对象的跟踪，commit对象能跟踪到具体哪一次修改，改了哪些具体文件，通过对commit的切换，就能找到某个时间点的文件记录了。GIT每次提交文件，实际上都是提交的整个文件，而不仅仅是修改的部分。所以当我们执行一些回退操作的时候能回到某个时间点的文件，即直接指定某个commit对象，查到commit对象中包含的各类tree对象和blob对象，把这些对象中压缩内容给取出来覆盖当前的同级，同名文件即可；同时新增的，给删除了。</p>
+
+            </div>
+            <hr style="width: 80%;">
+            
+            <div class="postfooter">
+                <ul class="post-copyright">
+                    <li><strong>文章作者：</strong>逸晖</li>
+            <li><strong>原文链接：</strong>https://hzqyihui.github.io/post/git-yuan-li/</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用<i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA
+                许可协议。转载请注明出处！</li>
+            </ul>
+        </div>
+        
+        <div id="otherpost">
+            
+            <a  data-pjax class="prev-post-pc" href="https://hzqyihui.github.io/post/tar-ming-ling/"  style="color: black;">
+                <div id="ppcontainer">
+                    
+                    <img src="https://oss.maxhua.cn/surface_cover/python-man-hua-pa-chong-gui-jie-mian-kai-fa.png" style="width: 100%;" class="opimg">
+                    
+                    <h4 class="optitle">tar命令：</h4>
+                </div>
+            </a>
+            <div class="prev-post">
+                上一篇 <a  data-pjax href="https://hzqyihui.github.io/post/tar-ming-ling/">tar命令：</a>
+            </div>
+            
+            
+            <a data-pjax class="next-post-pc" href="https://hzqyihui.github.io/post/tmux-shi-yong/"  style="color: black;">
+                <div id="npcontainer">
+                    
+                    <img src="https://oss.maxhua.cn/surface_cover/WechatIMG226.jpeg" style="width: 100%;" class="opimg">
+                    
+                    <h4 class="optitle">tmux使用</h4>
+                </div>
+            </a>
+            <div class="next-post">
+                下一篇 <a  data-pjax href="https://hzqyihui.github.io/post/tmux-shi-yong/">tmux使用</a>
+            </div>
+            
+        </div>
+    </div>
+    </div>
+    </div>
+    <!-- 弹窗 -->
+    <div id="myModal" class="modal">
+        <img class="modal-content" id="img01">
+    </div>
+</body>
+<script>
+    //文章阅读热度
+    var pl = $("#pl").html();
+    var rootaddr = $("#rootaddr").html();
+    pl = pl.replace(rootaddr, "");
+    $("#hotnum").attr('id', pl);
+</script>
+                    <div class="toc-container">
+                        <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#%E8%AE%A4%E8%AF%86%E4%B8%8Bgit%E5%AF%B9%E8%B1%A1-blob%E5%AF%B9%E8%B1%A1-tree%E5%AF%B9%E8%B1%A1-commit%E5%AF%B9%E8%B1%A1">认识下GIT对象：  <strong>blob对象</strong>， <strong>tree对象</strong>， <strong>commit对象</strong></a></li>
+</ul>
+</li>
+<li><a href="#1%E5%88%9B%E5%BB%BAblob%E5%AF%B9%E8%B1%A1">1.创建blob对象</a></li>
+<li><a href="#2%E5%88%9B%E5%BB%BAtree%E5%AF%B9%E8%B1%A1">2.创建tree对象</a></li>
+<li><a href="#3%E5%88%9B%E5%BB%BAcommit%E5%AF%B9%E8%B1%A1">3.创建commit对象</a></li>
+<li><a href="#4%E5%BA%94%E7%94%A8">4.应用</a>
+<ul>
+<li><a href="#41-git-add">4.1 git add</a></li>
+<li><a href="#42-git-diff">4.2 git diff</a></li>
+<li><a href="#43-git-status">4.3 git status</a></li>
+<li><a href="#44-git-branch-%E5%88%86%E6%94%AF%E5%90%8D">4.4 git branch 分支名</a></li>
+<li><a href="#45-git-checkout-%E6%9F%90%E5%88%86%E6%94%AF">4.5 git checkout 某分支</a></li>
+<li><a href="#46-git-commit-m-%E6%8F%90%E4%BA%A4%E4%BF%A1%E6%81%AF">4.6 git commit -m &quot;提交信息&quot;</a></li>
+<li><a href="#47-git-log">4.7 git log</a></li>
+<li><a href="#48-git-push">4.8 git push</a></li>
+<li><a href="#49-git-tag-version-name">4.9 git tag [version name]</a></li>
+<li><a href="#410-git-stash">4.10 git stash</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+                    </div>
+                    <div class="tog">
+                        <div class="toggleContainer">
+                            <div class="toggle">
+                                <i class="fas fa-angle-double-up"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👇 ------------------------->
+                    <div id="comment" class="comment">
+                        <div class="commentcontainer">
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👆 ------------------------->
+                </div>
+                <!-- main标签，pjax渲染时加载以上内容👆 -->
+                <div class="col-md-1 col-lg-2"></div>
+                <div id="bg">
+                </div>
+            </div>
+            <!-- ----------------左侧菜单栏html 👆-------------------------------------->
+            
+        </div>
+        <!-- aplayer播放器加载👇 -->
+            
+            <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+</head>
+
+<body>
+    <div class="miniMode">
+        <meting-js id="myaplayer" server="netease" type="playlist" fixed="true" order="default" muted="muted">
+        </meting-js>
+    </div>
+</body>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script>
+    function aplayerInit() {
+        var aplayerid = "2025151208";
+        var aplayerserver = "netease";
+        var aplayerorder = "default";
+        var aplayerautoplay = "true";
+        var aplayer = $("#myaplayer");
+        aplayer.attr("server", aplayerserver);
+        aplayer.attr("id", aplayerid);
+        aplayer.attr("order", aplayerorder);
+        if (aplayerautoplay == "true")
+            aplayer.attr("autoplay", "true");
+    }
+    aplayerInit();
+</script>
+
+<script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/Aplayer.min.js"></script>
+<!-- require MetingJS -->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+
+<script>
+    function aplayerbtnInit() {
+        var player = document.querySelectorAll('meting-js')[0].aplayer;
+        if(player==undefined)return false;
+        player.lrc.hide();
+        var mbabtn = $("#mbaplayer");
+        if (player.paused == false) {
+            mbabtn.removeClass("fa-play-circle-o");
+            mbabtn.addClass("fa-pause-circle");
+        } else {
+            mbabtn.addClass("fa-play-circle-o");
+            mbabtn.removeClass("fa-pause-circle");
+        }
+    }
+
+    function aplayerPlay() {
+        var player = document.querySelectorAll('meting-js')[0].aplayer;
+        var mbabtn = $("#mbaplayer");
+        if (player.paused == true) {
+            player.play();
+            mbabtn.removeClass("fa-play-circle-o");
+            mbabtn.addClass("fa-pause-circle");
+        } else {
+            player.pause();
+            mbabtn.addClass("fa-play-circle-o");
+            mbabtn.removeClass("fa-pause-circle");
+        }
+    }
+</script>
+            
+        <!-- aplayer播放器加载👆 -->
+    </div>
+    <!-- 背景图加载方式👇 -->
+    <div id="bgchoice" style="display: none">default
+                </div>
+                
+                <div id="bgurl" style="display:none">/media/images/custom-bgimage.jpg</div>
+                
+    <!-- 背景图加载方式👆 -->
+</body>
+
+<script>
+    //初始化
+    //更换twikoo头像
+    setTimeout(replaceAvatar,1000);
+    setTimeout(replaceAvatar,2000);
+    setTimeout(replaceAvatar,8000);
+    // --------为每张图片添加懒加载（lazyload）标签-->懒加载功能 👇------------
+    lazyload();
+    //为文章内所有代码块添加代码复制功能 👇
+    codeinit();
+    // ------代码高亮显示功能-------------
+    hljs.initHighlightingOnLoad();
+    if (shareChoice)
+        shareInit();
+    if (donateChoice)
+        donateInit();
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👇 ---------------->
+
+<script type="text/javascript">
+    var message_Path = '/live2d/'
+    var home_Path = document.getElementById("domainname").innerHTML + "/"; //此处修改为你的域名，必须带斜杠
+</script>
+<script type="text/javascript" src="https://hzqyihui.github.io/media/js/live2d.js"></script>
+<script type="text/javascript" src="https://hzqyihui.github.io/media/live2d/js/message.js"></script>
+<script type="text/javascript">
+    loadlive2d("live2d", "https://hzqyihui.github.io/media/live2d/assets/tororo.model.json");
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👆 ---------------->
+
+
+<!----------------------- 返回顶部按钮功能👇 --------------------->
+<script>
+    $(function () {
+        $('.toggleContainer').click(function () {
+            $('html,body').animate({
+                scrollTop: '0px'
+            }, 800);
+        });
+        $(window).scroll(function () {
+            var st = $(window).scrollTop();
+            if (st > 30) {
+                $(".toggleContainer").fadeIn(400);
+            } else {
+                $(".toggleContainer").fadeOut(100);
+            }
+        });
+    });
+</script>
+<!----------------------- 返回顶部按钮功能👆 --------------------->
+
+
+<!------------ 加载全局背景图功能👇（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+<script>
+    var bgchoice = "default"
+    var bg = $('#bg');
+    var bgurl = document.getElementById("bgurl").innerHTML;
+    if (bgchoice == 'default')
+    {
+        for (var i = 0; i < 3; i++)
+            bgurl = bgurl.replace("\\", "/");
+        bgurl = "https://hzqyihui.github.io/" + bgurl;
+    }
+    bg.css("background", "url('" + bgurl + "')");
+
+    window.onload = function () {
+        aplayerbtnInit();
+    }
+</script>
+<!------------ 加载全局背景图功能👆（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+
+
+
+
+<script src="https://hzqyihui.github.io/media/js/index.js"></script>
+
+
+<script>
+    //加载后的事件同步（阅读量、移动端评论等
+    window.onload = function () {
+    //代码块高亮渲染
+    document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+    });
+        getHotnum();
+        var sharepc = $(".share").eq(0).html();
+        $(".share").eq(1).html(sharepc);   //插件只会寻找一个分享标签渲染，所以需要手动添加到移动端
+        aplayerbtnInit();
+        $(".hljs").css({
+            "padding": "20px"
+        })
+    }
+</script>
+
+<!-- <script src="https://hzqyihui.github.io/media/js/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.6.1/dist/av-live-query-min.js"></script> -->

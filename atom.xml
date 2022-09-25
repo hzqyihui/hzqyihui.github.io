@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://hzqyihui.github.io</id>
+    <title>MaxHua&apos;s Note</title>
+    <updated>2022-09-25T15:37:07.831Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://hzqyihui.github.io"/>
+    <link rel="self" href="https://hzqyihui.github.io/atom.xml"/>
+    <subtitle>当能力和欲望不匹配时，人会极度痛苦。所以努力吧。</subtitle>
+    <logo>https://hzqyihui.github.io/images/avatar.png</logo>
+    <icon>https://hzqyihui.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2022, MaxHua&apos;s Note</rights>
+    <entry>
+        <title type="html"><![CDATA[Rocket基本概念：]]></title>
+        <id>https://hzqyihui.github.io/post/rocket-ji-ben-gai-nian/</id>
+        <link href="https://hzqyihui.github.io/post/rocket-ji-ben-gai-nian/">
+        </link>
+        <updated>2022-09-11T15:29:23.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Rocket安装和配置]]></title>
+        <id>https://hzqyihui.github.io/post/rocket-an-zhuang-he-pei-zhi/</id>
+        <link href="https://hzqyihui.github.io/post/rocket-an-zhuang-he-pei-zhi/">
+        </link>
+        <updated>2022-09-11T15:14:20.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Dockerfile 的语法使用：]]></title>
+        <id>https://hzqyihui.github.io/post/dockerfile-de-yu-fa-shi-yong/</id>
+        <link href="https://hzqyihui.github.io/post/dockerfile-de-yu-fa-shi-yong/">
+        </link>
+        <updated>2022-08-01T08:04:54.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[HTTP版本：]]></title>
+        <id>https://hzqyihui.github.io/post/http-ban-ben/</id>
+        <link href="https://hzqyihui.github.io/post/http-ban-ben/">
+        </link>
+        <updated>2022-05-27T11:47:12.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[HTTP请求响应过程：]]></title>
+        <id>https://hzqyihui.github.io/post/http-qing-qiu-xiang-ying-guo-cheng/</id>
+        <link href="https://hzqyihui.github.io/post/http-qing-qiu-xiang-ying-guo-cheng/">
+        </link>
+        <updated>2022-05-27T10:36:02.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[sed命令：]]></title>
+        <id>https://hzqyihui.github.io/post/sed-ming-ling/</id>
+        <link href="https://hzqyihui.github.io/post/sed-ming-ling/">
+        </link>
+        <updated>2021-09-19T11:55:23.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[xargs命令：]]></title>
+        <id>https://hzqyihui.github.io/post/xargs-ming-ling/</id>
+        <link href="https://hzqyihui.github.io/post/xargs-ming-ling/">
+        </link>
+        <updated>2021-09-19T11:53:50.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[firewall命令（防火墙）：]]></title>
+        <id>https://hzqyihui.github.io/post/firewall-ming-ling-fang-huo-qiang/</id>
+        <link href="https://hzqyihui.github.io/post/firewall-ming-ling-fang-huo-qiang/">
+        </link>
+        <updated>2021-06-16T12:03:26.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[nohup 命令：]]></title>
+        <id>https://hzqyihui.github.io/post/nohup-ming-ling/</id>
+        <link href="https://hzqyihui.github.io/post/nohup-ming-ling/">
+        </link>
+        <updated>2021-05-19T12:58:01.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[安装 FFmpeg：]]></title>
+        <id>https://hzqyihui.github.io/post/an-zhuang-ffmpeg/</id>
+        <link href="https://hzqyihui.github.io/post/an-zhuang-ffmpeg/">
+        </link>
+        <updated>2021-04-21T12:52:38.000Z</updated>
+    </entry>
+</feed>
